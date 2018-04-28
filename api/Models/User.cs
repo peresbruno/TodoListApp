@@ -1,9 +1,12 @@
-﻿namespace api.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace api.Models
 {
     public class User
     {
-        public string Id { get; set; }
+        public long Id { get; set; }
         public string FirstName { get; set; }
+        [Required]
         public string LastName { get; set; }
         public int Age { get; set; }
     }
