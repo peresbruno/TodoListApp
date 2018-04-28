@@ -1,4 +1,4 @@
-# User End-Point
+### User End-Point
 
  - `GET /api/users` - Get a list of all users.
  - `GET /api/users/{id}` - Get a representation of the user specified by `{id}` paremeter.
