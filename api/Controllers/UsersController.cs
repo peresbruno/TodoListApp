@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using api.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api.Controllers
 {
-    [Route("api/[controller]")]
-    public class UsersController : Controller
+    
+    public class UsersController : TodoAppController
     {
         private readonly UserContext _userContext;
 
@@ -37,8 +36,28 @@ namespace api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             _userContext.Users.Add(user);
+            _userContext.SaveChanges();
 
             return CreatedAtAction(nameof(Get), new {id = user.Id}, user);
+        }
+
+        [HttpPut("{id}", Name = "PutUser")]
+        public ActionResult Put(long id, [FromBody] User user)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var oldUser = _userContext.Users.Find(id);
+
+            if (oldUser == null) return NotFound();
+
+            oldUser.FirstName = user.FirstName;
+            oldUser.LastName = user.LastName;
+            oldUser.Age = user.Age;
+
+            _userContext.Users.Update(oldUser);
+            _userContext.SaveChanges();
+
+            return Ok(oldUser);
         }
     }
 }
