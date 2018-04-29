@@ -1,11 +1,12 @@
 ﻿using System.Linq;
 using api.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 
 namespace api.Controllers
 {
-    
-    public class UsersController : TodoAppController
+    [Route("api/users")]
+    public class UsersController : Controller
     {
         private readonly UserContext _userContext;
 
@@ -14,10 +15,10 @@ namespace api.Controllers
             _userContext = userContext;
         }
 
-        [HttpGet("{id}", Name = "GetUser")]
-        public ActionResult Get(long id)
+        [HttpGet("{userId:long}", Name = "GetUser")]
+        public ActionResult Get([FromRoute] long userId)
         {
-            var user = _userContext.Users.Find(id);
+            var user = _userContext.Users.Find(userId);
 
             if (user == null) return NotFound();
 
@@ -38,15 +39,15 @@ namespace api.Controllers
             _userContext.Users.Add(user);
             _userContext.SaveChanges();
 
-            return CreatedAtAction(nameof(Get), new {id = user.Id}, user);
+            return CreatedAtAction(nameof(Get), new {userId = user.Id}, user);
         }
 
-        [HttpPut("{id}", Name = "PutUser")]
-        public ActionResult Put(long id, [FromBody] User user)
+        [HttpPut("{userId:long}", Name = "PutUser")]
+        public ActionResult Put([FromRoute] long userId, [FromBody] User user)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var oldUser = _userContext.Users.Find(id);
+            var oldUser = _userContext.Users.Find(userId);
 
             if (oldUser == null) return NotFound();
 
@@ -58,6 +59,19 @@ namespace api.Controllers
             _userContext.SaveChanges();
 
             return Ok(oldUser);
+        }
+
+        [HttpDelete("{userId:long}", Name = "DeleteUser")]
+        public ActionResult Delete([FromRoute] long userId)
+        {
+            var user = _userContext.Users.Find(userId);
+
+            if (user == null) return NotFound();
+
+            _userContext.Users.Remove(user);
+            _userContext.SaveChanges();
+            
+            return NoContent();
         }
     }
 }

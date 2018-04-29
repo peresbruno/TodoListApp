@@ -19,6 +19,7 @@ namespace api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<UserContext>(opt => opt.UseInMemoryDatabase("Users"));
+            services.AddDbContext<TodoItemContext>(opt => opt.UseInMemoryDatabase("Todos"));
             services.AddMvc();
         }
 

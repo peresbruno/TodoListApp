@@ -2,7 +2,7 @@
 
 namespace api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     public class TodoAppController : Controller
     {
         

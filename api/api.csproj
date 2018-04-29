@@ -13,5 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Controllers\ValuesController.cs" />
+    <Compile Remove="Controllers\TodoAppController.cs" />
   </ItemGroup>
 </Project>
