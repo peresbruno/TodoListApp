@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Newtonsoft.Json;
 
-namespace api.Models
+namespace api.DataTransferObjects
 {
-    public class User
+    public class CreateUserDTO
     {
         public long Id { get; set; }
         [Required]
@@ -20,7 +19,6 @@ namespace api.Models
         [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [JsonIgnore]
         public string Password { get; set; }
     }
 }
