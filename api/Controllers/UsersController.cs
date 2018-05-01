@@ -1,20 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using api.DataTransferObjects;
 using api.Models;
-using JWT;
-using JWT.Algorithms;
-using JWT.Serializers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace api.Controllers
 {
     [Route("api/users")]
+    [Authorize]
     public class UsersController : Controller
     {
         private readonly UserContext _userContext;
@@ -46,13 +47,13 @@ namespace api.Controllers
         }
 
         [HttpGet(Name = "GetAllUsers")]
-        [Authorize]
         public ActionResult GetAll()
         {
             return Ok(_userContext.Users.ToList());
         }
 
         [HttpPost(Name = "PostUser")]
+        [AllowAnonymous]
         public async Task<ActionResult> Post([FromBody] CreateUserDTO createUserDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -114,22 +115,36 @@ namespace api.Controllers
         }
 
         [HttpPost("sign-in", Name = "SignInUser")]
+        [AllowAnonymous]
         public async Task<ActionResult> SignIn([FromBody] CredentialDTO credential)
         {
             if (!ModelState.IsValid) return new JsonResult("Unexpected error") {StatusCode = 400};
 
-            var result = _signInManager.PasswordSignInAsync(credential.Email, credential.Password, false, false);
-
-            if (!result.IsCompletedSuccessfully) return new JsonResult("Unable to sign in") {StatusCode = 401};
-            
             var user = await _userManager.FindByEmailAsync(credential.Email);
-            return new JsonResult(  new Dictionary<string, object>
-            {
-                { "access_token", GetAccessToken(credential.Email) },
-                { "id_token", GetIdToken(user) }
-            });
 
-            return new OkResult();
+            if (user == null) return BadRequest("Email not found");
+            
+            var checkPwd = await _signInManager.CheckPasswordSignInAsync(user, credential.Password, false);
+            
+            if (!checkPwd.Succeeded) return BadRequest("Invalid credentials");
+            
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Jti, user.Id),
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(_options.Issuer,
+                _options.Audience,
+                claims,
+                expires: DateTime.Now.AddMinutes(30),
+                signingCredentials: creds);
+
+            return Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token) });
+
         }
         
         private JsonResult Errors(IdentityResult result)
@@ -140,48 +155,5 @@ namespace api.Controllers
             return new JsonResult(items) {StatusCode = 400};
         }
         
-        private string GetAccessToken(string Email) {
-            var payload = new Dictionary<string, object>
-            {
-                { "sub", Email },
-                { "email", Email }
-            };
-            return GetToken(payload);
-        }
-
-        private string GetToken(IDictionary<string, object> payload) {
-            var secret = _options.SecretKey;
-
-            payload.Add("iss", _options.Issuer);
-            payload.Add("aud", _options.Audience);
-            payload.Add("nbf", ConvertToUnixTimestamp(DateTime.Now));
-            payload.Add("iat", ConvertToUnixTimestamp(DateTime.Now));
-            payload.Add("exp", ConvertToUnixTimestamp(DateTime.Now.AddDays(7)));
-            IJwtAlgorithm algorithm = new HMACSHA256Algorithm();
-            IJsonSerializer serializer = new JsonNetSerializer();
-            IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
-            IJwtEncoder encoder = new JwtEncoder(algorithm, serializer, urlEncoder);
-
-            return encoder.Encode(payload, secret);
-        }
-        
-        private static double ConvertToUnixTimestamp(DateTime date)
-        {
-            var origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            var diff = date.ToUniversalTime() - origin;
-            return Math.Floor(diff.TotalSeconds);
-        }
-        
-        private string GetIdToken(IdentityUser user) {
-            var payload = new Dictionary<string, object>
-            {
-                { "id", user.Id },
-                { "sub", user.Email },
-                { "email", user.Email },
-                { "emailConfirmed", user.EmailConfirmed },
-            };
-            return GetToken(payload);
-        }
-
     }
 }

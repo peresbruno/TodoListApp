@@ -1,10 +1,12 @@
 ﻿using System.Linq;
 using api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api.Controllers
 {
     [Route("api/users/{userId:long}/todos")]
+    [Authorize]
     public class TodoController : Controller
     {
         private readonly UserContext _userContext;
