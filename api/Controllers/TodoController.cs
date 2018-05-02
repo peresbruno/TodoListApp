@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,9 +20,9 @@ namespace api.Controllers
         }
 
         [HttpGet(Name = "GetTodosForUser")]
-        public ActionResult GetAll([FromRoute] long userId)
+        public async Task<ActionResult> GetAll([FromRoute] long userId)
         {
-            var user = _userContext.Users.Find(userId);
+            var user = await _userContext.Users.FindAsync(userId);
 
             if (user == null) return NotFound("User not found");
 
@@ -31,72 +32,70 @@ namespace api.Controllers
         }
 
         [HttpGet("{todoId:long}", Name = "GetTodoForUser")]
-        public ActionResult Get([FromRoute] long userId, [FromRoute] long todoId)
+        public async Task<IActionResult> Get([FromRoute] long userId, [FromRoute] long todoId)
         {
-            var user = _userContext.Users.Find(userId);
+            var user = await _userContext.Users.FindAsync(userId);
 
             if (user == null) return NotFound("User not found");
 
-            var todo = _todoItemContext.Todos.Find(todoId);
+            var todo = await _todoItemContext.Todos.FindAsync(todoId);
 
-            if (todo.UserId != userId) return NotFound("Todo item not found");
+            if (todo?.UserId != userId) return NotFound("Todo item not found");
 
             return Ok(todo);
         }
 
         [HttpPost(Name = "PostTodoForUser")]
-        public ActionResult Post([FromRoute] long userId, [FromBody] TodoItem todoItem)
+        public async Task<IActionResult> Post([FromRoute] long userId, [FromBody] TodoItem todoItem)
         {
-            var user = _userContext.Users.Find(userId);
+            var user = await _userContext.Users.FindAsync(userId);
 
             if (user == null) return NotFound("User not found");
 
             todoItem.UserId = userId;
 
-            _todoItemContext.Todos.Add(todoItem);
-            _todoItemContext.SaveChanges();
+            await _todoItemContext.Todos.AddAsync(todoItem);
+            await _todoItemContext.SaveChangesAsync();
             
             return CreatedAtAction(nameof(Get), new {userId = user.Id, todoId = todoItem.Id}, todoItem);
-
         }
 
         [HttpPut("{todoId:long}", Name = "PutTodoForUser")]
-        public ActionResult Put([FromRoute] long userId, [FromRoute] long todoId, [FromBody] TodoItem todoItem)
+        public async Task<IActionResult> Put([FromRoute] long userId, [FromRoute] long todoId, [FromBody] TodoItem todoItem)
         {
-            var user = _userContext.Users.Find(userId);
+            var user = await _userContext.Users.FindAsync(userId);
 
             if (user == null) return NotFound("User not found");
             
-            var todo = _todoItemContext.Todos.Find(todoId);
+            var todo = await _todoItemContext.Todos.FindAsync(todoId);
 
-            if (todo.UserId != userId) return NotFound("Todo item not found");
+            if (todo?.UserId != userId) return NotFound("Todo item not found");
 
             todo.Done = todoItem.Done;
             todo.Description = todoItem.Description;
             todo.Date = todoItem.Date;
 
             _todoItemContext.Todos.Update(todo);
-            _todoItemContext.SaveChanges();
+            await _todoItemContext.SaveChangesAsync();
 
             return Ok(todo);
         }
 
         [HttpDelete("{todoId:long}", Name = "DeleteTodoForUser")]
-        public ActionResult Delete([FromRoute] long userId, [FromRoute] long todoId)
+        public async Task<IActionResult> Delete([FromRoute] long userId, [FromRoute] long todoId)
         {
-            var user = _userContext.Users.Find(userId);
+            var user = await _userContext.Users.FindAsync(userId);
 
             if (user == null) return NotFound("User not found");
             
-            var todo = _todoItemContext.Todos.Find(todoId);
+            var todo = await _todoItemContext.Todos.FindAsync(todoId);
 
-            if (todo.UserId != userId) return NotFound("Todo item not found");
+            if (todo?.UserId != userId) return NotFound("Todo item not found");
 
             _todoItemContext.Todos.Remove(todo);
-            _todoItemContext.SaveChanges();
+            await _todoItemContext.SaveChangesAsync();
             
             return NoContent();
         }
-        
     }
 }

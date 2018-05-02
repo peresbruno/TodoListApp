@@ -37,9 +37,9 @@ namespace api.Controllers
         }
         
         [HttpGet("{userId:long}", Name = "GetUser")]
-        public ActionResult Get([FromRoute] long userId)
+        public async Task<IActionResult> Get([FromRoute] long userId)
         {
-            var user = _userContext.Users.Find(userId);
+            var user = await _userContext.Users.FindAsync(userId);
 
             if (user == null) return NotFound();
 
@@ -47,14 +47,14 @@ namespace api.Controllers
         }
 
         [HttpGet(Name = "GetAllUsers")]
-        public ActionResult GetAll()
+        public IActionResult GetAll()
         {
             return Ok(_userContext.Users.ToList());
         }
 
         [HttpPost(Name = "PostUser")]
         [AllowAnonymous]
-        public async Task<ActionResult> Post([FromBody] CreateUserDTO createUserDto)
+        public async Task<IActionResult> Post([FromBody] CreateUserDTO createUserDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -83,11 +83,11 @@ namespace api.Controllers
         }
 
         [HttpPut("{userId:long}", Name = "PutUser")]
-        public ActionResult Put([FromRoute] long userId, [FromBody] EditUserDTO editUserDto)
+        public async Task<IActionResult> Put([FromRoute] long userId, [FromBody] EditUserDTO editUserDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var user = _userContext.Users.Find(userId);
+            var user = await _userContext.Users.FindAsync(userId);
 
             if (user == null) return NotFound();
 
@@ -96,20 +96,20 @@ namespace api.Controllers
             user.Age = editUserDto.Age;
 
             _userContext.Users.Update(user);
-            _userContext.SaveChanges();
+            await _userContext.SaveChangesAsync();
 
             return Ok(user);
         }
 
         [HttpDelete("{userId:long}", Name = "DeleteUser")]
-        public ActionResult Delete([FromRoute] long userId)
+        public async Task<ActionResult> Delete([FromRoute] long userId)
         {
             var user = _userContext.Users.Find(userId);
 
             if (user == null) return NotFound();
 
             _userContext.Users.Remove(user);
-            _userContext.SaveChanges();
+            await _userContext.SaveChangesAsync();
             
             return NoContent();
         }
