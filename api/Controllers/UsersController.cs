@@ -70,10 +70,10 @@ namespace api.Controllers
             _userContext.Users.Add(user);
             _userContext.SaveChanges();
             
-            var identity = new IdentityUser {UserName = user.Email, Email = user.Email};
+            var identity = new IdentityUser {UserName = user.Email, Email = user.Email, Id = user.Id.ToString()};
 
             var result = await _userManager.CreateAsync(identity, user.Password);
-
+            
             if (!result.Succeeded)
             {
                 return Errors(result);
